@@ -87,9 +87,7 @@ public class Tetromino {
     }
 
     public void setPositionX(int positionX) {
-        if(!(positionX < 0 || positionX > 11)) {
-            this.positionX = positionX;
-        }
+        this.positionX = positionX;
     }
 
     public int getPositionY() {
