@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.trent.trentris.models.Tetromino;
 
@@ -17,45 +18,48 @@ import java.util.Random;
 import static com.trent.trentris.models.Tetromino.*;
 
 /**
- * Created by janu2 on 14/01/2018.
+ * Created by janu2 on 23/01/2018.
  */
 
 public class WorldController implements InputProcessor {
 
-    private static final int WORLD_WIDTH = 14;
-    private static final int WORLD_HEIGHT = 24;
-    private int[][] worldData = new int[25][10];
+    private static final int WORLD_X = 12;
+    private static final int WORLD_Y = 25;
+    private static final int VIEWPORT_WIDTH = 14;
+    private static final int VIEWPORT_HEIGHT = 24;
+    private static final int START_X = WORLD_X / 2;
+    private static final int START_Y = WORLD_Y - 2;
+
+    private int[][] worldData = new int[WORLD_X][WORLD_Y];
     private OrthographicCamera camera;
     private ShapeRenderer shapeRenderer;
     private Texture texture;
     private Image image;
-    private Tetromino firstMongo = new Tetromino(Type.L, TetrominoColor.BLUE, 5, 4);
+    private Tetromino currentTetromino = new Tetromino(Type.Z, TetrominoColor.BLUE, START_X, START_Y);
     private int worldTics = 0;
     private int stepTics = 60;
     private Random random = new Random(System.currentTimeMillis());
 
-    public enum GameState {
-
-    }
-
     public WorldController() {
-        this.camera = new OrthographicCamera(WORLD_WIDTH,WORLD_HEIGHT);
+        this.camera = new OrthographicCamera(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
         this.shapeRenderer = new ShapeRenderer();
         this.texture = new Texture(Gdx.files.internal("tile.png"));
         this.image = new Image(new TextureRegion(texture));
 
-        camera.position.set(WORLD_WIDTH/2,WORLD_HEIGHT/2,0f);
+        camera.position.set((VIEWPORT_WIDTH /2)+1, (VIEWPORT_HEIGHT /2)+1,0f);
         camera.update();
+        camera.zoom = 1.0f;
+        init();
     }
 
     public void update(float delta) {
         if(worldTics % stepTics == 0) {
             Gdx.app.log("WorldTics", ""+worldTics);
-            if(firstMongo.getPositionY()>0) {
-                firstMongo.setPositionY(firstMongo.getPositionY()-1);
+            if(currentTetromino.getPositionY()>0) {
+                currentTetromino.setPositionY(currentTetromino.getPositionY()-1);
             }
             else {
-                placeBlock(firstMongo, firstMongo.getPositionX(), firstMongo.getPositionY());
+                //placeBlock(currentTetromino, currentTetromino.getPositionX(), currentTetromino.getPositionY());
                 getNext();
             }
         }
@@ -67,39 +71,74 @@ public class WorldController implements InputProcessor {
         camera.update();
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        int data = firstMongo.getData();
-        //System.out.println("BEGIN");
+        shapeRenderer.setColor(currentTetromino.getType().color);
+
+        int data = currentTetromino.getData();
+
+        System.out.println("BEGIN");
         for(int i=0;i<4;i++) {
             int temp = (data & (0x000F << i*4));
-            //System.out.println(temp+"A");
+            System.out.println(temp+"A");
             temp = (temp >> i*4);
             if(temp != 0) {
                 for(int j=0;j<4;j++) {
                     int place = ((temp & (0x1 << j)));
-                    //System.out.println(place+"B");
+                    System.out.println(place+"B");
                     if(place != 0) {
-                        //Gdx.app.log("L", j + ":" + i);
-                        shapeRenderer.rect(i+firstMongo.getPositionX(),j+firstMongo.getPositionY(),1,1);
+                        Gdx.app.log("L", j + ":" + i);
+                        shapeRenderer.rect(i+ currentTetromino.getPositionX(),j+ currentTetromino.getPositionY(),1,1);
                     }
                 }
             }
         }
-        for (int x=0;x<25;x++) {
-            for (int y=0;y<10;y++) {
-                if(worldData[x][y] == 1) {
+        System.out.println("END");
+
+        for (int x=0;x<WORLD_X;x++) {
+            for (int y=0;y<WORLD_Y;y++) {
+                if(worldData[x][y] != 0) {
                     shapeRenderer.rect(x,y,1,1);
                 }
             }
         }
-        //System.out.println("END");
         shapeRenderer.end();
-
-        //Gdx.app.log("Mongo", ""+(short)(firstMongo.getType().getData()&0x000F));
-
     }
 
-    private void getNext() {
+    private boolean checkCollision() {
+        int data = currentTetromino.getData();
+        for (int x=0;x<4;x++) {
+            int temp = (data & (0x000F << x*4));
+            //System.out.println(temp+"A");
+            temp = (temp >> x*4);
+            if (temp != 0) {
+                for(int y=0;y<4;y++) {
+                    int place = ((temp & (0x1 << y)));
+                    //System.out.println(place+"B");
+                    if (place != 0) {
+                        //Gdx.app.log("L", j + ":" + i);
+                        if(worldData[x][y] != 0) {
+                            Gdx.app.log("first", "collision");
+                            return true;
+                        }
+                        if(worldData[Math.max(x-1,0)][y] != 0) {
+                            Gdx.app.log("second", "collision");
 
+                            return true;
+                        }
+                        if(worldData[x][Math.max(y-1,0)] != 0) {
+                            Gdx.app.log("third", "collision");
+
+                            return true;
+                        }
+                        if(worldData[x][Math.min(y+1,11)] != 0) {
+                            Gdx.app.log("fourth", "collision");
+
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void placeBlock(Tetromino tetromino, int positionX, int positionY) {
@@ -115,21 +154,20 @@ public class WorldController implements InputProcessor {
                     //System.out.println(place+"B");
                     if(place != 0) {
                         //Gdx.app.log("L", j + ":" + i);
-                        worldData[i+firstMongo.getPositionX()][j+firstMongo.getPositionY()] = 1;
-                        //shapeRenderer.rect(i+firstMongo.getPositionX(),j+firstMongo.getPositionY(),1,1);
+                        worldData[i+ currentTetromino.getPositionX()][j+ currentTetromino.getPositionY()] = 1;
+                        //shapeRenderer.rect(i+currentTetromino.getPositionX(),j+currentTetromino.getPositionY(),1,1);
                     }
                 }
             }
         }
-        firstMongo.setPositionY(5);
-        firstMongo.setType(getRandomTetromino());
         Gdx.app.log("TetData",""+data);
         Gdx.app.log("X", ""+positionX);
         Gdx.app.log("Y", ""+positionY);
     }
 
-    private void checkCollision(Tetromino tetromino) {
-
+    private void getNext() {
+        currentTetromino.setPositionY(START_Y);
+        currentTetromino.setType(getRandomTetromino());
     }
 
     private Type getRandomTetromino() {
@@ -137,64 +175,26 @@ public class WorldController implements InputProcessor {
         return Type.values()[pick];
     }
 
-    public static int getWorldWidth() {
-        return WORLD_WIDTH;
-    }
-
-    public static int getWorldHeight() {
-        return WORLD_HEIGHT;
-    }
-
-    public int[][] getWorldData() {
-        return worldData;
-    }
-
-    public void setWorldData(int[][] worldData) {
-        this.worldData = worldData;
-    }
-
-    public OrthographicCamera getCamera() {
-        return camera;
-    }
-
-    public void setCamera(OrthographicCamera camera) {
-        this.camera = camera;
-    }
-
-    public ShapeRenderer getShapeRenderer() {
-        return shapeRenderer;
-    }
-
-    public void setShapeRenderer(ShapeRenderer shapeRenderer) {
-        this.shapeRenderer = shapeRenderer;
-    }
-
-    public Texture getTexture() {
-        return texture;
-    }
-
-    public void setTexture(Texture texture) {
-        this.texture = texture;
-    }
-
-    public Image getImage() {
-        return image;
-    }
-
-    public void setImage(Image image) {
-        this.image = image;
+    private void init() {
+        for(int i = 0;i < WORLD_Y; i++) {
+            worldData[0][i] = 1;
+            worldData[WORLD_X-1][i] = 1;
+        }
+        for(int i=0;i < WORLD_X;i++) {
+            worldData[i][0] = 1;
+        }
     }
 
     @Override
     public boolean keyDown(int keycode) {
         if(keycode == Input.Keys.UP) {
-            firstMongo.rotate();
+            currentTetromino.rotate();
         }
         if(keycode == Input.Keys.RIGHT) {
-            firstMongo.setPositionX(firstMongo.getPositionX()+1);
+            currentTetromino.setPositionX(currentTetromino.getPositionX()+1);
         }
         if(keycode == Input.Keys.LEFT) {
-            firstMongo.setPositionX(firstMongo.getPositionX()-1);
+            currentTetromino.setPositionX(currentTetromino.getPositionX()-1);
         }
         return false;
     }

@@ -1,5 +1,6 @@
 package com.trent.trentris.models;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 
 import java.util.ArrayList;
@@ -12,19 +13,21 @@ import java.util.List;
 public class Tetromino {
 
     public enum Type {
-        I(0x4444,0x0F00,0x2222,0x00F0),
-        O(0x0033,0x0033,0x0033,0x0033),
-        T(0x0232,0x0270,0x0262,0x0072),
-        S(0x0231,0x0360,0x0231,0x0036),
-        Z(0x0132,0x0000,0x0132,0x0000),
-        J(0x0226,0x0470,0x0322,0x0071),
-        L(0x0622,0x0170,0x0223,0x0074);
+        I(new Color(Color.RED),     0x4444,0x0F00,0x2222,0x00F0),
+        O(new Color(Color.YELLOW),  0x0033,0x0033,0x0033,0x0033),
+        T(new Color(Color.PURPLE),  0x0232,0x0270,0x0262,0x0072),
+        S(new Color(Color.GREEN),   0x0231,0x0360,0x0231,0x0036),
+        Z(new Color(Color.RED),     0x0264,0x0630,0x0132,0x0063),
+        J(new Color(Color.BLUE),    0x0226,0x0470,0x0322,0x0071),
+        L(new Color(Color.ORANGE),  0x0622,0x0170,0x0223,0x0074);
 
         public int data[];
+        public Color color;
         private List<int[][]> orientations = new ArrayList<int[][]>();
 
-        Type(int... data) {
+        Type(Color color, int... data) {
             this.data = data;
+            this.color = color;
         }
     }
 
