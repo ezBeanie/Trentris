@@ -31,7 +31,7 @@ public class WorldController implements InputProcessor {
     private ShapeRenderer shapeRenderer;
     private Texture texture;
     private Image image;
-    private Tetromino firstMongo = new Tetromino(Tetromino.Type.T, Tetromino.TetrominoColor.BLUE);
+    private Tetromino firstMongo = new Tetromino(Tetromino.Type.L, Tetromino.TetrominoColor.BLUE);
 
     public WorldController() {
         this.camera = new OrthographicCamera(WORLD_WIDTH,WORLD_HEIGHT);
