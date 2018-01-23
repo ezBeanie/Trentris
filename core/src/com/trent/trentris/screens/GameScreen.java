@@ -32,6 +32,7 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         spriteBatch.begin();
+        worldController.update(delta);
         worldController.render(spriteBatch);
         spriteBatch.end();
     }

@@ -26,10 +26,6 @@ public class Tetromino {
         Type(int... data) {
             this.data = data;
         }
-
-        public int[] getData() {
-            return data;
-        }
     }
 
     public enum TetrominoColor {
@@ -44,16 +40,19 @@ public class Tetromino {
     private int orientation;
     private int positionX, positionY;
 
-    public Tetromino(Type type, TetrominoColor tetrominoColor) {
+    public Tetromino(Type type, TetrominoColor tetrominoColor, int positionX, int positionY) {
         this.type = type;
+        this.tetrominoColor = tetrominoColor;
+        this.positionX = positionX;
+        this.positionY = positionY;
     }
 
     public int getData() {
-        return type.getData()[orientation];
+        return type.data[orientation];
     }
 
     public void rotate() {
-        orientation = (orientation + 1)%4;
+        orientation = (orientation + 1) % 4;
     }
 
     public Type getType() {
